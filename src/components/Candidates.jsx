@@ -31,7 +31,6 @@ export default function GithubCandidates() {
         },
       });
       console.log(response.data);
-      //create an alert if no candidates are fount (empty array)
       if (response.data.length === 0) {
         alert("No candidates found");
       }
@@ -46,10 +45,10 @@ export default function GithubCandidates() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold">GitHub Candidates</h2>
+      <h2 className="text-xl font-semibold">Customize Search</h2>
       <div className="space-y-2">
         <div>
-          <label htmlFor="repoLimit" className="block">
+          <label htmlFor="repoLimit" className="block text-gray-400">
             Repo Limit:
           </label>
           <input
@@ -57,11 +56,11 @@ export default function GithubCandidates() {
             type="number"
             value={repoLimit}
             onChange={(e) => setRepoLimit(Number(e.target.value))}
-            className="border p-1"
+            className="p-1 bg-secondary rounded-md"
           />
         </div>
         <div>
-          <label htmlFor="offset" className="block">
+          <label htmlFor="offset" className="block text-gray-400">
             Offset:
           </label>
           <input
@@ -69,11 +68,11 @@ export default function GithubCandidates() {
             type="number"
             value={offset}
             onChange={(e) => setOffset(Number(e.target.value))}
-            className="border p-1"
+            className="p-1 bg-secondary rounded-md"
           />
         </div>
         <div>
-          <label htmlFor="maxCandidatesPerRepo" className="block">
+          <label htmlFor="maxCandidatesPerRepo" className="block text-gray-400">
             Max Candidates Per Repo:
           </label>
           <input
@@ -81,11 +80,11 @@ export default function GithubCandidates() {
             type="number"
             value={maxCandidatesPerRepo}
             onChange={(e) => setMaxCandidatesPerRepo(Number(e.target.value))}
-            className="border p-1"
+            className="p-1 bg-secondary rounded-md"
           />
         </div>
         <div>
-          <label htmlFor="requiredTechnologies" className="block">
+          <label htmlFor="requiredTechnologies" className="block text-gray-400">
             Required Technologies (comma-separated):
           </label>
           <input
@@ -97,11 +96,11 @@ export default function GithubCandidates() {
                 e.target.value.split(",").map((tech) => tech.trim())
               )
             }
-            className="border p-1 w-full"
+            className="p-1 w-full bg-secondary rounded-md"
           />
         </div>
         <div>
-          <label className="flex items-center">
+          <label className="flex items-center text-gray-400">
             <input
               type="checkbox"
               checked={requireAllTechnologies}
@@ -112,13 +111,15 @@ export default function GithubCandidates() {
             sufficient)
           </label>
         </div>
-        <button
-          onClick={fetchCandidates}
-          disabled={loading}
-          className="bg-blue-500 text-white px-4 py-2 rounded disabled:bg-blue-300"
-        >
-          {loading ? "Fetching..." : "Fetch Candidates"}
-        </button>
+        <div className="flex row justify-end py-2">
+          <button
+            onClick={fetchCandidates}
+            disabled={loading}
+            className="bg-primary text-black font-semibold px-4 py-2 rounded disabled:bg-gray-300"
+          >
+            {loading ? "Fetching..." : "Fetch Candidates"}
+          </button>
+        </div>
       </div>
       {error && <p className="text-red-500">{error}</p>}
       {candidates.length > 0 && (
