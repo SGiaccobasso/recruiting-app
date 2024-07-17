@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
+import useLocalStorage from "../hooks/useLocalStorage";
 
 export default function GithubCandidates() {
   const [candidates, setCandidates] = useState([]);
@@ -17,7 +18,10 @@ export default function GithubCandidates() {
   ]);
   const [requireAllTechnologies, setRequireAllTechnologies] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(null);
-  const [lastIndexChecked, setLastIndexChecked] = useState(null);
+  const [lastIndexChecked, setLastIndexChecked] = useLocalStorage(
+    "lastIndexChecked",
+    0
+  );
 
   const copyToClipboard = (email) => {
     navigator.clipboard.writeText(email).then(() => {
@@ -52,13 +56,6 @@ export default function GithubCandidates() {
       setLoading(false);
     }
   };
-
-  // if last index checked changes, add it to offset to fetch next set of repos
-  useEffect(() => {
-    if (lastIndexChecked) {
-      setOffset((prevOffset) => prevOffset + lastIndexChecked);
-    }
-  }, [lastIndexChecked]);
 
   return (
     <div className="space-y-4">
@@ -139,9 +136,7 @@ export default function GithubCandidates() {
         </div>
       </div>
       {error && <p className="text-red-500">{error}</p>}
-      {lastIndexChecked && (
-        <p className="text-gray-400">Last index checked: {lastIndexChecked}</p>
-      )}
+      <p className="text-gray-400">Last index checked: {lastIndexChecked}</p>
       {candidates.length > 0 && (
         <div className="space-y-4">
           {candidates.map((candidate, index) => (

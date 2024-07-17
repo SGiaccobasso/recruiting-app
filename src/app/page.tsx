@@ -1,4 +1,4 @@
-import GithubCandidates from "../components/Candidates";
+import GithubCandidates from "./components/Candidates";
 
 export default function Home() {
   return (
