@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import axios from "axios";
+import Link from "next/link";
 
 export default function GithubCandidates() {
   const [candidates, setCandidates] = useState([]);
@@ -16,6 +17,14 @@ export default function GithubCandidates() {
     "web3",
   ]);
   const [requireAllTechnologies, setRequireAllTechnologies] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState(null);
+
+  const copyToClipboard = (email) => {
+    navigator.clipboard.writeText(email).then(() => {
+      setCopiedEmail(email);
+      setTimeout(() => setCopiedEmail(null), 2000); // Reset after 2 seconds
+    });
+  };
 
   const fetchCandidates = async () => {
     setLoading(true);
@@ -45,7 +54,7 @@ export default function GithubCandidates() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold">Customize Search</h2>
+      <h2 className="text-xl font-medium text-gray-200">Customize Search:</h2>
       <div className="space-y-2">
         <div>
           <label htmlFor="repoLimit" className="block text-gray-400">
@@ -56,7 +65,7 @@ export default function GithubCandidates() {
             type="number"
             value={repoLimit}
             onChange={(e) => setRepoLimit(Number(e.target.value))}
-            className="p-1 bg-secondary rounded-md text-gray-400"
+            className="p-2 w-full bg-secondary rounded-md text-gray-400"
           />
         </div>
         <div>
@@ -68,7 +77,7 @@ export default function GithubCandidates() {
             type="number"
             value={offset}
             onChange={(e) => setOffset(Number(e.target.value))}
-            className="p-1 bg-secondary rounded-md text-gray-400"
+            className="p-2 w-full bg-secondary rounded-md text-gray-400"
           />
         </div>
         <div>
@@ -80,7 +89,7 @@ export default function GithubCandidates() {
             type="number"
             value={maxCandidatesPerRepo}
             onChange={(e) => setMaxCandidatesPerRepo(Number(e.target.value))}
-            className="p-1 bg-secondary rounded-md text-gray-400"
+            className="p-2 w-full bg-secondary rounded-md text-gray-400"
           />
         </div>
         <div>
@@ -96,7 +105,7 @@ export default function GithubCandidates() {
                 e.target.value.split(",").map((tech) => tech.trim())
               )
             }
-            className="p-1 w-full bg-secondary rounded-md text-gray-400"
+            className="p-2 w-full bg-secondary rounded-md text-gray-400"
           />
         </div>
         <div>
@@ -126,18 +135,43 @@ export default function GithubCandidates() {
         <div className="space-y-4">
           {candidates.map((candidate, index) => (
             <div key={index} className="border p-4 rounded-lg">
-              <h3 className="text-xl font-medium text-gray-200">
-                {candidate.user}
-              </h3>
-              <div className="flex">
+              <Link
+                rel="noopener noreferrer"
+                href={`https://github.com/${candidate.user}`}
+                target="_blank"
+                className="inline-flex items-center gap-2 text-accent hover:underline"
+              >
+                <h3 className="text-xl font-medium text-gray-200">
+                  {candidate.user}
+                </h3>
+              </Link>
+              <div className="flex items-center">
                 <p className="text-gray-400">Email: &nbsp;</p>
-                <p className="text-primary">
-                  {candidate.contactInfo?.email || "-"}
-                </p>
+                {candidate.contactInfo?.email ? (
+                  <button
+                    onClick={() => copyToClipboard(candidate.contactInfo.email)}
+                    className="text-primary hover:underline focus:outline-none"
+                  >
+                    {candidate.contactInfo.email}
+                  </button>
+                ) : (
+                  <p className="text-gray-400">-</p>
+                )}
+                {candidate.contactInfo?.email &&
+                  copiedEmail === candidate.contactInfo?.email && (
+                    <span className="ml-2 text-green-500 text-sm">Copied!</span>
+                  )}
               </div>
               <div className="flex">
                 <p className="text-gray-400">Repo: &nbsp;</p>
-                <p className="text-primary">{candidate.repo}</p>
+                <Link
+                  rel="noopener noreferrer"
+                  href={`https://github.com${candidate.repo}`}
+                  target="_blank"
+                  className="inline-flex items-center gap-2 text-accent hover:underline"
+                >
+                  <p className="text-primary">{candidate.repo}</p>
+                </Link>
               </div>
               <div className="flex">
                 <p className="text-gray-400">Contributions: &nbsp;</p>
@@ -148,6 +182,12 @@ export default function GithubCandidates() {
                 <p className="text-primary">
                   {candidate.matchedTechnologies.join(", ")}
                 </p>
+              </div>
+              <div className="flex">
+                <p className="text-gray-400">
+                  Contributions in last 3 months: &nbsp;
+                </p>
+                <p className="text-primary">{candidate.recentContributions}</p>
               </div>
             </div>
           ))}

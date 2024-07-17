@@ -155,6 +155,35 @@ async function getContactInformation(login) {
   }
 }
 
+async function getRecentContributions(username) {
+  try {
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    const fromDate = threeMonthsAgo.toISOString().split("T")[0];
+
+    const { data: events } = await github.get(`/users/${username}/events`, {
+      params: {
+        per_page: 100,
+        page: 1,
+      },
+    });
+
+    const recentContributions = events.filter(
+      (event) =>
+        new Date(event.created_at) >= threeMonthsAgo &&
+        ["PushEvent", "PullRequestEvent", "IssuesEvent"].includes(event.type)
+    ).length;
+
+    return recentContributions;
+  } catch (error) {
+    console.error(
+      `Error fetching recent contributions for ${username}:`,
+      error.message
+    );
+    return 0;
+  }
+}
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const repoLimit = parseInt(searchParams.get("repoLimit") || "10");
@@ -182,7 +211,10 @@ export async function GET(request) {
     const candidatesWithInfo = await Promise.all(
       filteredCandidates.map(async (candidate) => {
         const contactInfo = await getContactInformation(candidate.user);
-        return { ...candidate, contactInfo };
+        const recentContributions = await getRecentContributions(
+          candidate.user
+        );
+        return { ...candidate, contactInfo, recentContributions };
       })
     );
 
