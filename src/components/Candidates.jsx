@@ -14,7 +14,6 @@ export default function GithubCandidates() {
   const [requiredTechnologies, setRequiredTechnologies] = useState([
     "solidity",
     "javascript",
-    "web3",
   ]);
   const [requireAllTechnologies, setRequireAllTechnologies] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(null);
