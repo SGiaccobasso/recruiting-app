@@ -43,7 +43,6 @@ export default function GithubCandidates() {
           requireAllTechnologies: requireAllTechnologies,
         },
       });
-      console.log(response.data);
       if (response.data.candidatesWithInfo.length === 0) {
         alert("No candidates found");
       }
