@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
 
@@ -17,6 +17,7 @@ export default function GithubCandidates() {
   ]);
   const [requireAllTechnologies, setRequireAllTechnologies] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(null);
+  const [lastIndexChecked, setLastIndexChecked] = useState(null);
 
   const copyToClipboard = (email) => {
     navigator.clipboard.writeText(email).then(() => {
@@ -39,10 +40,11 @@ export default function GithubCandidates() {
         },
       });
       console.log(response.data);
-      if (response.data.length === 0) {
+      if (response.data.candidatesWithInfo.length === 0) {
         alert("No candidates found");
       }
-      setCandidates(response.data);
+      setCandidates(response.data.candidatesWithInfo);
+      setLastIndexChecked(response.data.processedRepos);
     } catch (error) {
       console.error("Error fetching candidates:", error);
       setError("Failed to fetch candidates. Please try again later.");
@@ -50,6 +52,13 @@ export default function GithubCandidates() {
       setLoading(false);
     }
   };
+
+  // if last index checked changes, add it to offset to fetch next set of repos
+  useEffect(() => {
+    if (lastIndexChecked) {
+      setOffset((prevOffset) => prevOffset + lastIndexChecked);
+    }
+  }, [lastIndexChecked]);
 
   return (
     <div className="space-y-4">
@@ -130,6 +139,9 @@ export default function GithubCandidates() {
         </div>
       </div>
       {error && <p className="text-red-500">{error}</p>}
+      {lastIndexChecked && (
+        <p className="text-gray-400">Last index checked: {lastIndexChecked}</p>
+      )}
       {candidates.length > 0 && (
         <div className="space-y-4">
           {candidates.map((candidate, index) => (

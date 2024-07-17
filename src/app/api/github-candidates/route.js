@@ -16,30 +16,85 @@ const github = axios.create({
   },
 });
 
-async function getEcosystemRepos(repoLimit, offset) {
+async function getEcosystemRepos(
+  repoLimit,
+  offset,
+  requiredTechnologies,
+  requireAllTechnologies
+) {
   try {
     const repoUrls = [];
     const { data: folders } = await github.get(ecosystemsUrl);
+    let processedRepos = 0;
 
     for (const folder of folders) {
-      if (repoUrls.length >= repoLimit + offset) break;
+      if (processedRepos >= offset + repoLimit) break;
 
       const { data: files } = await github.get(folder.url);
 
       for (const file of files) {
-        if (repoUrls.length >= repoLimit + offset) break;
+        if (processedRepos >= offset + repoLimit) break;
         if (file.name.endsWith(".toml")) {
           const { data: tomlContent } = await github.get(file.download_url);
           const ecosystemData = TOML.parse(tomlContent);
 
-          if (ecosystemData.repo) {
-            repoUrls.push(...ecosystemData.repo);
+          if (ecosystemData.repo && Array.isArray(ecosystemData.repo)) {
+            if (processedRepos >= offset + repoLimit) break;
+
+            for (const repoObj of ecosystemData.repo) {
+              if (processedRepos >= offset + repoLimit) break;
+
+              if (repoObj.url && !repoObj.missing) {
+                if (processedRepos < offset) {
+                  processedRepos++;
+                  continue;
+                }
+                console.log(
+                  `Processing repo ${repoObj.url}... index ${processedRepos}`
+                );
+
+                const urlParts = repoObj.url.split("/");
+                const owner = urlParts[urlParts.length - 2];
+                const repo = urlParts[urlParts.length - 1];
+
+                try {
+                  const { data: repoData } = await github.get(
+                    `/repos/${owner}/${repo}`
+                  );
+                  const repoLanguage = repoData.language?.toLowerCase();
+
+                  const matchedTechnologies = requiredTechnologies.filter(
+                    (tech) => tech.toLowerCase() === repoLanguage
+                  );
+
+                  if (
+                    (requireAllTechnologies &&
+                      matchedTechnologies.length ===
+                        requiredTechnologies.length) ||
+                    (!requireAllTechnologies && matchedTechnologies.length > 0)
+                  ) {
+                    repoUrls.push({
+                      url: repoObj.url,
+                      matchedTechnologies,
+                    });
+                  }
+                } catch (error) {
+                  console.error(
+                    `Error fetching repo data for ${repoObj.url}:`,
+                    error.message
+                  );
+                }
+
+                processedRepos++;
+                if (repoUrls.length >= repoLimit) break;
+              }
+            }
           }
         }
       }
     }
 
-    return repoUrls.slice(offset, offset + repoLimit);
+    return { repoUrls, processedRepos };
   } catch (error) {
     console.error("Error fetching ecosystem repos:", error.message);
     return [];
@@ -49,7 +104,7 @@ async function getEcosystemRepos(repoLimit, offset) {
 async function getRelevantCandidates(repoUrls, maxCandidatesPerRepo) {
   const candidatesMap = new Map();
 
-  for (const url of repoUrls) {
+  for (const { url, matchedTechnologies } of repoUrls) {
     try {
       const [owner, repo] = url.split("/").slice(-2);
       console.log(`Fetching top contributors for ${owner}/${repo}...`);
@@ -72,6 +127,7 @@ async function getRelevantCandidates(repoUrls, maxCandidatesPerRepo) {
               user: contributor.login,
               contributions: contributor.contributions,
               repo: `/${owner}/${repo}`,
+              matchedTechnologies,
             });
           }
         });
@@ -89,57 +145,6 @@ async function getRelevantCandidates(repoUrls, maxCandidatesPerRepo) {
   const candidates = Array.from(candidatesMap.values());
   console.log(`Found ${candidates.length} unique candidates`);
   return candidates;
-}
-
-async function filterByTechnologies(
-  candidates,
-  requiredTechnologies,
-  requireAllTechnologies
-) {
-  const filteredCandidates = [];
-
-  for (const candidate of candidates) {
-    console.log(`Fetching repositories for ${candidate.user}...`);
-    try {
-      const { data: repos } = await github.get(
-        `/users/${candidate.user}/repos`,
-        {
-          params: { per_page: 100 },
-        }
-      );
-
-      const userTechs = new Set(
-        repos.map((repo) => repo.language?.toLowerCase()).filter(Boolean)
-      );
-
-      const matchedTechnologies = requiredTechnologies.filter((tech) =>
-        userTechs.has(tech.toLowerCase())
-      );
-
-      if (requireAllTechnologies) {
-        if (matchedTechnologies.length === requiredTechnologies.length) {
-          filteredCandidates.push({
-            ...candidate,
-            matchedTechnologies,
-          });
-        }
-      } else {
-        if (matchedTechnologies.length > 0) {
-          filteredCandidates.push({
-            ...candidate,
-            matchedTechnologies,
-          });
-        }
-      }
-    } catch (error) {
-      console.error(
-        `Error fetching repos for ${candidate.user}:`,
-        error.message
-      );
-    }
-  }
-
-  return filteredCandidates;
 }
 
 async function getContactInformation(login) {
@@ -197,19 +202,19 @@ export async function GET(request) {
   const requireAllTechnologies =
     searchParams.get("requireAllTechnologies") === "true";
   try {
-    const repoUrls = await getEcosystemRepos(repoLimit, offset);
-    const candidates = await getRelevantCandidates(
-      repoUrls.map((repo) => repo.url),
-      maxCandidatesPerRepo
-    );
-    const filteredCandidates = await filterByTechnologies(
-      candidates,
+    const { repoUrls, processedRepos } = await getEcosystemRepos(
+      repoLimit,
+      offset,
       requiredTechnologies,
       requireAllTechnologies
     );
+    const candidates = await getRelevantCandidates(
+      repoUrls,
+      maxCandidatesPerRepo
+    );
 
     const candidatesWithInfo = await Promise.all(
-      filteredCandidates.map(async (candidate) => {
+      candidates.map(async (candidate) => {
         const contactInfo = await getContactInformation(candidate.user);
         const recentContributions = await getRecentContributions(
           candidate.user
@@ -218,7 +223,7 @@ export async function GET(request) {
       })
     );
 
-    return NextResponse.json(candidatesWithInfo);
+    return NextResponse.json({ candidatesWithInfo, processedRepos });
   } catch (error) {
     return NextResponse.json(
       { error: "An error occurred: " + error.message },
