@@ -56,7 +56,7 @@ export default function GithubCandidates() {
             type="number"
             value={repoLimit}
             onChange={(e) => setRepoLimit(Number(e.target.value))}
-            className="p-1 bg-secondary rounded-md"
+            className="p-1 bg-secondary rounded-md text-gray-400"
           />
         </div>
         <div>
@@ -68,7 +68,7 @@ export default function GithubCandidates() {
             type="number"
             value={offset}
             onChange={(e) => setOffset(Number(e.target.value))}
-            className="p-1 bg-secondary rounded-md"
+            className="p-1 bg-secondary rounded-md text-gray-400"
           />
         </div>
         <div>
@@ -80,7 +80,7 @@ export default function GithubCandidates() {
             type="number"
             value={maxCandidatesPerRepo}
             onChange={(e) => setMaxCandidatesPerRepo(Number(e.target.value))}
-            className="p-1 bg-secondary rounded-md"
+            className="p-1 bg-secondary rounded-md text-gray-400"
           />
         </div>
         <div>
@@ -96,7 +96,7 @@ export default function GithubCandidates() {
                 e.target.value.split(",").map((tech) => tech.trim())
               )
             }
-            className="p-1 w-full bg-secondary rounded-md"
+            className="p-1 w-full bg-secondary rounded-md text-gray-400"
           />
         </div>
         <div>
@@ -126,10 +126,29 @@ export default function GithubCandidates() {
         <div className="space-y-4">
           {candidates.map((candidate, index) => (
             <div key={index} className="border p-4 rounded-lg">
-              <h3 className="text-xl font-semibold">{candidate.user}</h3>
-              <p>Email: {candidate.contactInfo?.email || "Not available"}</p>
-              <p>Repo: {candidate.repo}</p>
-              <p>Contributions: {candidate.contributions}</p>
+              <h3 className="text-xl font-medium text-gray-200">
+                {candidate.user}
+              </h3>
+              <div className="flex">
+                <p className="text-gray-400">Email: &nbsp;</p>
+                <p className="text-primary">
+                  {candidate.contactInfo?.email || "-"}
+                </p>
+              </div>
+              <div className="flex">
+                <p className="text-gray-400">Repo: &nbsp;</p>
+                <p className="text-primary">{candidate.repo}</p>
+              </div>
+              <div className="flex">
+                <p className="text-gray-400">Contributions: &nbsp;</p>
+                <p className="text-primary">{candidate.contributions}</p>
+              </div>
+              <div className="flex">
+                <p className="text-gray-400">Matched Technologies: &nbsp;</p>
+                <p className="text-primary">
+                  {candidate.matchedTechnologies.join(", ")}
+                </p>
+              </div>
             </div>
           ))}
         </div>

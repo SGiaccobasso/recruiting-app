@@ -47,7 +47,7 @@ async function getEcosystemRepos(repoLimit, offset) {
 }
 
 async function getRelevantCandidates(repoUrls, maxCandidatesPerRepo) {
-  const candidates = new Set();
+  const candidatesMap = new Map();
 
   for (const url of repoUrls) {
     try {
@@ -67,8 +67,8 @@ async function getRelevantCandidates(repoUrls, maxCandidatesPerRepo) {
 
       if (response.data && Array.isArray(response.data)) {
         response.data.forEach((contributor) => {
-          if (contributor.login) {
-            candidates.add({
+          if (contributor.login && !candidatesMap.has(contributor.login)) {
+            candidatesMap.set(contributor.login, {
               user: contributor.login,
               contributions: contributor.contributions,
               repo: `/${owner}/${repo}`,
@@ -85,8 +85,10 @@ async function getRelevantCandidates(repoUrls, maxCandidatesPerRepo) {
       console.error(`Error fetching contributors for ${url}:`, error.message);
     }
   }
-  console.log(`Found ${candidates.size} relevant candidates`);
-  return Array.from(candidates);
+
+  const candidates = Array.from(candidatesMap.values());
+  console.log(`Found ${candidates.length} unique candidates`);
+  return candidates;
 }
 
 async function filterByTechnologies(
@@ -116,11 +118,17 @@ async function filterByTechnologies(
 
       if (requireAllTechnologies) {
         if (matchedTechnologies.length === requiredTechnologies.length) {
-          filteredCandidates.push(candidate);
+          filteredCandidates.push({
+            ...candidate,
+            matchedTechnologies,
+          });
         }
       } else {
         if (matchedTechnologies.length > 0) {
-          filteredCandidates.push(candidate);
+          filteredCandidates.push({
+            ...candidate,
+            matchedTechnologies,
+          });
         }
       }
     } catch (error) {
@@ -159,7 +167,6 @@ export async function GET(request) {
     ?.split(",") || ["solidity", "javascript", "web3"];
   const requireAllTechnologies =
     searchParams.get("requireAllTechnologies") === "true";
-
   try {
     const repoUrls = await getEcosystemRepos(repoLimit, offset);
     const candidates = await getRelevantCandidates(
