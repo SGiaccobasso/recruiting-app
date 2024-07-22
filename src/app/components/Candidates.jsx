@@ -49,7 +49,6 @@ export default function GithubCandidates() {
       setCandidates(response.data.candidatesWithInfo);
       setLastIndexChecked(response.data.processedRepos);
     } catch (error) {
-      console.error("Error fetching candidates:", error);
       setError("Failed to fetch candidates. Please try again later.");
     } finally {
       setLoading(false);
