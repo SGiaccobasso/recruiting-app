@@ -61,7 +61,7 @@ export default function GithubCandidates() {
       <div className="space-y-2">
         <div>
           <label htmlFor="repoLimit" className="block text-gray-400">
-            Repo Limit:
+            Repo Limit (max number of repos to check):
           </label>
           <input
             id="repoLimit"
@@ -73,7 +73,7 @@ export default function GithubCandidates() {
         </div>
         <div>
           <label htmlFor="offset" className="block text-gray-400">
-            Offset:
+            Offset (index of the first repo to check):
           </label>
           <input
             id="offset"
