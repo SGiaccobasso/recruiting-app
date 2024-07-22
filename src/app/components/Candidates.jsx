@@ -134,7 +134,15 @@ export default function GithubCandidates() {
         </div>
       </div>
       {error && <p className="text-red-500">{error}</p>}
-      <p className="text-gray-400">Last index checked: {lastIndexChecked}</p>
+      <div className="flex">
+        <p className="text-gray-400">Last index checked: {lastIndexChecked}</p>{" "}
+        <button
+          onClick={() => setOffset(lastIndexChecked)}
+          className="text-primary hover:underline focus:outline-none ml-3"
+        >
+          Set Offset
+        </button>
+      </div>
       {candidates.length > 0 && (
         <div className="space-y-4">
           {candidates.map((candidate, index) => (
